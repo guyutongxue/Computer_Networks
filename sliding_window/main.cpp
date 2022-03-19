@@ -145,7 +145,7 @@ template <std::size_t WindowSize, bool ResendAll>
 static int stud_slide_window(char* pBuffer, int bufferSize, UINT8 messageType) {
     static Buffer window[WindowSize];
     static std::size_t lower = 0, upper = 0;
-    static std::deque<Buffer> waiting;
+    static std::queue<Buffer> waiting;
     static Resender<ResendAll> resender;
 
     Frame currentFrame = *reinterpret_cast<Frame*>(pBuffer);
@@ -165,7 +165,7 @@ static int stud_slide_window(char* pBuffer, int bufferSize, UINT8 messageType) {
             } else {
                 // 窗口已满，等待
                 std::cout << "Action: wait" << std::endl;
-                waiting.push_back(buffer);
+                waiting.push(buffer);
             }
             return 0;
         }
@@ -185,7 +185,7 @@ static int stud_slide_window(char* pBuffer, int bufferSize, UINT8 messageType) {
                     lower++;
                     if (waiting.size() > 0) {
                         Buffer buffer = waiting.front();
-                        waiting.pop_front();
+                        waiting.pop();
                         window[upper % WindowSize] = buffer;
                         std::cout << "Action: ack " << lower << ", then send " << upper << std::endl;
                         upper++;

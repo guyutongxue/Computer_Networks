@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "gcc single file build",
+            "type": "process",
+            "command": "g++",
+            "args": [
+                "-S",
+                "-std=c++98",
+                "-pedantic-errors",
+                "-Wall",
+                "-Wextra",
+                // "-Werror",
+                "-DLOCAL",
+                "${file}",
+                "-o",
+                "NUL"
+            ],
+            "problemMatcher": "$gcc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
