@@ -127,7 +127,7 @@ struct IPv4Header {
     uint32_t srcAddr;
     uint32_t dstAddr;
 
-    uint16_t checkSum() const {
+    uint16_t verifyChecksum() const {
         uint32_t sum = 0;
         const uint16_t* p = reinterpret_cast<const uint16_t*>(this);
         for (int i = 0; i < 10; i++) {
@@ -135,12 +135,18 @@ struct IPv4Header {
         }
         return sum + (sum >> 16);
     }
+    
+    void generateChecksum() {
+        headerChecksum = 0;
+        int checksum = verifyChecksum();
+        headerChecksum = ~htons(checksum);
+    }
 };
 #pragma pack()
 
 int stud_ip_recv(char* pBuffer, unsigned short length) {
     const IPv4Header* header = reinterpret_cast<IPv4Header*>(pBuffer);
-    if (header->checkSum() != 0xffff) {
+    if (header->verifyChecksum() != 0xffff) {
         ip_DiscardPkt(pBuffer, STUD_IP_TEST_CHECKSUM_ERROR);
         return STUD_ERR;
     }
@@ -181,8 +187,7 @@ int stud_ip_Upsend(char* pBuffer, unsigned short len, unsigned int srcAddr, unsi
     header->protocol = protocol;
     header->srcAddr = htonl(srcAddr);
     header->dstAddr = htonl(dstAddr);
-    const uint16_t checksum = header->checkSum();
-    header->headerChecksum = ntohs(~checksum);
+    header->generateChecksum();
 
     std::memcpy(resultBuffer + 20, pBuffer, len);
     ip_SendtoLower(resultBuffer, dataLength);
