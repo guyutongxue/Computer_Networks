@@ -19,10 +19,12 @@ STATIC_ASSERT(sizeof(uint16_t) == 2, uint16_t_is_2_bytes);
 STATIC_ASSERT(sizeof(uint32_t) == 4, uint32_t_is_4_bytes);
 
 // <arpa/inet.h> or <winsock2.h>, should be provided by OS
+extern "C" {
 uint32_t htonl(uint32_t hostlong);
 uint16_t htons(uint16_t hostshort);
 uint32_t ntohl(uint32_t netlong);
 uint16_t ntohs(uint16_t netshort);
+}
 
 // -- predefined --
 
@@ -74,6 +76,7 @@ struct Frame {
 };
 
 // -- implementation --
+
 #include <iostream>
 #include <queue>
 
@@ -112,13 +115,14 @@ const char* messageTypeToStr(UINT8 messageType) {
 #define WINDOW_SIZE_STOP_WAIT 1
 #define WINDOW_SIZE_BACK_N_FRAME 4
 
-template<bool ResendAll>
+template <bool ResendAll>
 struct Resender;
 
-template<>
+template <>
 struct Resender<true> {
-    template<std::size_t WindowSize>
-    void operator()(Buffer (&window)[WindowSize], std::size_t seq, std::size_t begin, std::size_t end) {
+    template <std::size_t WindowSize>
+    void operator()(Buffer (&window)[WindowSize], std::size_t seq, std::size_t begin,
+                    std::size_t end) {
         seq = begin;
         while (seq < end) {
             Buffer& buffer = window[seq % WindowSize];
@@ -129,10 +133,11 @@ struct Resender<true> {
     }
 };
 
-template<>
+template <>
 struct Resender<false> {
-    template<std::size_t WindowSize>
-    void operator()(Buffer (&window)[WindowSize], std::size_t seq, std::size_t begin, std::size_t end) {
+    template <std::size_t WindowSize>
+    void operator()(Buffer (&window)[WindowSize], std::size_t seq, std::size_t begin,
+                    std::size_t end) {
         Buffer& buffer = window[seq - 1 % WindowSize];
         std::cout << "Action: resend (" << seq << ")" << std::endl;
         SendFRAMEPacket(reinterpret_cast<unsigned char*>(&buffer.data), buffer.size);
@@ -187,9 +192,11 @@ static int stud_slide_window(char* pBuffer, int bufferSize, UINT8 messageType) {
                         Buffer buffer = waiting.front();
                         waiting.pop();
                         window[upper % WindowSize] = buffer;
-                        std::cout << "Action: ack " << lower << ", then send " << upper << std::endl;
+                        std::cout << "Action: ack " << lower << ", then send " << upper
+                                  << std::endl;
                         upper++;
-                        SendFRAMEPacket(reinterpret_cast<unsigned char*>(&buffer.data), buffer.size);
+                        SendFRAMEPacket(reinterpret_cast<unsigned char*>(&buffer.data),
+                                        buffer.size);
                     } else {
                         std::cout << "Action: ack " << lower << std::endl;
                     }
@@ -211,10 +218,10 @@ int stud_slide_window_stop_and_wait(char* pBuffer, int bufferSize, UINT8 message
     return stud_slide_window<WINDOW_SIZE_STOP_WAIT, true>(pBuffer, bufferSize, messageType);
 }
 
-int stud_slide_window_back_n_frame(char *pBuffer, int bufferSize, UINT8 messageType) {
+int stud_slide_window_back_n_frame(char* pBuffer, int bufferSize, UINT8 messageType) {
     return stud_slide_window<WINDOW_SIZE_BACK_N_FRAME, true>(pBuffer, bufferSize, messageType);
 }
 
-int stud_slide_window_choice_frame_resend(char *pBuffer, int bufferSize, UINT8 messageType) {
+int stud_slide_window_choice_frame_resend(char* pBuffer, int bufferSize, UINT8 messageType) {
     return stud_slide_window<WINDOW_SIZE_BACK_N_FRAME, false>(pBuffer, bufferSize, messageType);
 }

@@ -22,6 +22,56 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "single file build",
+            "type": "process",
+            "command": "g++",
+            "args": [
+                "-std=c++98",
+                "-pedantic-errors",
+                "-Wall",
+                "-Wextra",
+                // "-Werror",
+                "-DLOCAL",
+                "${file}",
+                "-o",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-lws2_32",
+            ],
+            "problemMatcher": "$gcc",
+        },
+        {
+            "args": [
+                "C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-NoProfile",
+                "-File",
+                "C:\\Users\\Guyutongxue\\AppData\\Roaming\\vscch\\pause-console.ps1",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+            ],
+            "command": "START",
+            "dependsOn": "single file build",
+            "label": "run and pause",
+            "presentation": {
+                "clear": true,
+                "echo": false,
+                "focus": false,
+                "panel": "shared",
+                "reveal": "never",
+                "showReuseMessage": false
+            },
+            "problemMatcher": [],
+            "type": "shell"
         }
-    ]
+    ],
+    "options": {
+        "shell": {
+            "executable": "C:\\Windows\\system32\\cmd.exe",
+            "args": [
+                "/C",
+            ]
+        }
+    }
 }
